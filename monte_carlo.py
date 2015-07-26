@@ -9,7 +9,7 @@ class LandingPoints(list):
     "A list of landing points with ability to run simulations and populate itself"    
     
     def add_simulations(self, num):
-        with orhelper.OpenRocketInstance('OpenRocket-test.jar', log_level='ERROR'):
+        with orhelper.OpenRocketInstance('/home/jbbowen/Desktop/OpenRocket Stuff/OpenRocket-15.03.jar', log_level='ERROR'):
             
             # Load the document and get simulation
             orh = orhelper.Helper()
