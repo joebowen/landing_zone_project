@@ -1,6 +1,15 @@
 import sys, traceback
-from jpype import *
+import jpype
 import numpy as np
+
+import os
+os.environ['CLASSPATH'] = "/home/jbbowen/Desktop/OpenRocket Stuff/OpenRocket-15.03.jar"
+
+import jnius_config
+jnius_config.add_options('-ea')
+jnius_config.set_classpath('.', '/home/jbbowen/Desktop/OpenRocket Stuff/OpenRocket-15.03.jar')
+import jnius
+from jnius import autoclass
 
 class OpenRocketInstance(object):
     """ When instantiated, this class starts up a new openrocket instance.
@@ -14,9 +23,10 @@ class OpenRocketInstance(object):
             log_level can be either ERROR, WARN, USER, INFO, DEBUG or VBOSE
         """
             
-        startJVM(getDefaultJVMPath(), "-Djava.class.path=%s" % jar_path)
-        orp = JPackage("net").sf.openrocket
-        orp.startup.Startup.initializeLogging()
+        jpype.startJVM(jpype.getDefaultJVMPath(), '-ea', "-Djava.class.path=%s" % jar_path)
+        orp = jpype.JPackage("net").sf.openrocket
+        startup = jpype.JClass('net.sf.openrocket.startup.Application')
+        startup.initializeLogging()
         log_level = orp.logging.LogLevel.fromString(log_level, orp.logging.LogLevel.ERROR)
         orp.startup.Application.setLogOutputLevel(log_level)
         orp.startup.Startup.initializeL10n()
@@ -27,7 +37,7 @@ class OpenRocketInstance(object):
              
     def __exit__(self, ty, value, tb):
         
-        shutdownJVM()
+        jpype.shutdownJVM()
         
         if not ty is None:
             print 'Exception while calling openrocket'
@@ -43,12 +53,12 @@ class Helper(object):
     """
     
     def __init__(self):
-        self.orp = JPackage("net").sf.openrocket
+        self.orp = jpype.JPackage("net").sf.openrocket
 
     def load_doc(self, or_filename):
         """ Loads a .ork file and returns the corresponding openrocket document """
         
-        or_java_file = java.io.File(or_filename)
+        or_java_file = jpype.java.io.File(or_filename)
         loader = self.orp.file.GeneralRocketLoader()
         doc = loader.load(or_java_file)
         return doc
@@ -61,9 +71,9 @@ class Helper(object):
         if listeners == None:
             # this method takes in a vararg of SimulationListeners, which is just a fancy way of passing in an array, so 
             # we have to pass in an array of length 0 ..
-            listener_array = JArray(self.orp.simulation.listeners.AbstractSimulationListener, 1)(0)
+            listener_array = jpype.JArray(self.orp.simulation.listeners.AbstractSimulationListener, 1)(0)
         else:
-            listener_array = [JProxy( ( self.orp.simulation.listeners.SimulationListener, 
+            listener_array = [jpype.JProxy( ( self.orp.simulation.listeners.SimulationListener,
                                         self.orp.simulation.listeners.SimulationEventListener,
                                         self.orp.simulation.listeners.SimulationComputationListener
                                         ) , inst=c) for c in listeners]
